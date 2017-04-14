@@ -73,3 +73,19 @@ def analyze_ticks(code,date=''):
         
     except:
         print('当前日期%s不是交易日'%date)
+        
+        
+def QQ_login(f_name):
+    '''
+    登录QQ机器人用于发送消息
+    
+    调用该函数之后会弹出一个二维码，使用用于发送消息的QQ扫码登录即可
+    name 为 用于接收监控消息的qq备注名，即已登录QQ中的任一个好友
+    '''
+    from qqbot import QQBot
+    bot = QQBot()
+    bot.Login()  # 用需要登录的qq扫码
+    con = bot.List('buddy',f_name)  # 获取好友列表
+    sms = 'QQ机器人登录成功！'
+    bot.SendTo(con[0],sms)
+    return bot,con

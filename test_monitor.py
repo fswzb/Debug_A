@@ -9,3 +9,4 @@ from monitor import monitor
 
 
 m = monitor('600122')
+m.check_undulation_and_num_big()
