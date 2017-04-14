@@ -2,7 +2,7 @@
 """
 Created on Sun Apr  2 21:19:31 2017
 存放重复使用的函数
-@author: Mike
+@author: zb
 """
 import functools
 import time as t
