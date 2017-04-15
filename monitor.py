@@ -81,7 +81,7 @@ class monitor:
               time(13,0,0) <= datetime.now().time() <= time(15,0,0) :
             
             # 调用ts.get_today_ticks获取当日历史分笔
-            ticks = ts.get_today_ticks(code)
+            ticks = ts.get_today_ticks(code,retry_count=10)
             print('\n')
             ticks['time'] = [datetime.strptime(ticks.iloc[i,0],'%H:%M:%S') \
                                 for i in range(len(ticks))]
@@ -139,7 +139,6 @@ class monitor:
             res_csv = code + '_over_' + str(over)[0:2] + 'w_'+\
                         date.today().isoformat()+'.csv'
             datas.to_csv(res_csv, index=False)
-        
         return datas
         
         
