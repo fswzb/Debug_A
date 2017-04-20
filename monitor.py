@@ -53,13 +53,13 @@ class monitor:
         # 当前价 & 当前量
         rt = ts.get_realtime_quotes(code)
         price = rt.iloc[0,3]
-        amount = float(rt.iloc[0,9])
+        total = float(rt.iloc[0,9])
         # 10万以上买卖盘分布及其占比
         datas = ticks[ticks.amount > over]
         bs = dict(datas.groupby(['type']).apply(sum)['amount'])
-        ratio = sum(bs.values())/amount
+        ratio = sum(bs.values())/total
         # 构造sms
-        sms_1 = '{0}\n{1}：当前价 {2},当前总成交 {3}\n'.format(dt,code,price,amount)
+        sms_1 = '{0}\n{1}：当前价 {2},当前总成交 {3}\n'.format(dt,code,price,total)
         sms_2 = '{0}万以上成交量占比 {1}；其中，买盘 {2}，卖盘{3}'.format(str(over)[0:2],
                 round(ratio,3),bs['买盘'],bs['卖盘'])
         return sms_1 + sms_2
@@ -95,15 +95,17 @@ class monitor:
             p_wave = (max(datas.price) - min(datas.price))/open_p
             p_wave = round(p_wave,3)
             if p_wave > change:
+                msg = '5分钟波动大于 %s 个点，请注意！\n'%str(p_wave*100)
                 sms = monitor.sms_contruct(code,ticks,over)
-                self.bot.SendTo(self.con[0],sms)
+                self.bot.SendTo(self.con[0],msg+sms)
                 t.sleep(120)
             
             # 检测5分钟大单数量
             big_orders = datas[datas.amount > over]
             if len(big_orders) > num_big:
+                msg = '5分钟大单成交数量累计大于 %s 单，请注意！\n'%str(num_big)
                 sms = monitor.sms_contruct(code,ticks,over)
-                self.bot.SendTo(self.con[0],sms)
+                self.bot.SendTo(self.con[0],msg+sms)
                 t.sleep(120)
             
             t.sleep(30)
