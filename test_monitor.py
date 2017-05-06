@@ -7,9 +7,7 @@ Created on Wed Apr 12 10:45:19 2017
 
 from monitor import monitor
 
-#m = monitor('600122')
-#m.check_undulation_and_num_big()
-
-from conf import QQ_login
+m = monitor('600122')
+m.check_undulation_and_num_big()
 
 
