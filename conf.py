@@ -7,9 +7,13 @@ Created on Mon Apr 17 12:34:34 2017
 
 # 监控模式  level_A  强  level_B 一般  level_C 弱
 modes = {'level_A':{
+                    # 涨跌幅监控参数
+                    'change_in_today':0.05,       # 5%
+                    'change_in_10min':0.03,       # 3%
+                    'change_in_5min':0.01,       # 1%
+                    # 大单监控参数
                     'over':[100000,200000,500000,1000000,5000000],
-                    'change_in_10min':0.01,       # 1%
-                    'big_num_in_5min':10,
+                    'big_in_5min':10,
                     'turnover_rate_in_5min':0.05  # 5%
                     },
          'level_B':{
@@ -26,9 +30,8 @@ modes = {'level_A':{
                     }
         }
 
-# 需要监控的股票代码
-code = ['600122']
-codes = ['600122','002256']
+# 需要监控的股票列表 必须为list
+codes = ['600122']
 
 # 接收监控消息的联系人
 contacts = ['年轻人','great']

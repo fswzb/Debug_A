@@ -6,19 +6,21 @@ Created on Sun Apr  2 21:19:31 2017
 """
 import functools
 import time as t
+import pandas as pd
 import tushare as ts
-from datetime import datetime,time,timedelta
+from datetime import datetime
 
-# 自定义一个函数运行耗时计算装饰器
+# 函数运行耗时计算装饰器
 def time_cost(func):
     @functools.wraps(func)
     def wrapper(*args,**kw):
         start = t.time()
         # 调用被装饰的函数
         print('正在运行函数 %s() ...'%func.__name__)
-        func(*args,**kw)
+        res = func(*args,**kw)
         end = t.time()
         print('函数%s()运行耗时：%.2f 秒'%(func.__name__,end-start))
+        return res
     return wrapper
 
 def xq_code_url(code):
@@ -84,3 +86,38 @@ def csv_duplications(csv='realtime_quotes.csv'):
         datas = pd.read_csv(csv,encoding='gbk')
     datas_dul = datas.drop_duplicates() # 去重
     datas_dul.to_csv(csv,index=False)
+    
+@time_cost
+def update_all_codes():
+    '''
+    更新A股中所有股票代码
+    '''
+    all_ = ts.get_stock_basics()
+    all_codes = pd.DataFrame(all_.name)
+    all_codes['code'] = ['|'+str(ins) for ins in all_.index]
+    all_codes.to_csv('all_codes_in_market_A.csv',index=False,
+                     encoding = 'gbk')
+
+@time_cost
+def check_today_ticks(code,over=100000,to_csv=True):
+    '''
+    保存某只股票的当日交易明细
+    
+    parameters
+    ----------------
+        code  股票代码 如：600122
+        over  成交金额在over数值以上
+        to_csv  布尔变量，True表示将结果保存到csv文件中
+    
+    return
+    ----------------
+        datas  当日成交额在over数值以上的所有成交记录
+    '''
+    # 调用ts.get_today_ticks获取当日交易记录
+    ticks = ts.get_today_ticks(code)
+    datas = ticks[ticks.amount > over]
+    # 保存结果
+    if to_csv == True:
+        res_csv = code + '_over_' + str(over)[0:2] + 'k.csv'
+        datas.to_csv(res_csv, index=False)
+    return datas
