@@ -82,13 +82,16 @@ def m_change(ticks,mode_level='level_A'):
     mode = conf.modes[mode_level]
     
     # 构造预警消息
-    sms1 = '{0}\n{1}\n全天波动：{2}%\n10分钟波动：{3}%\n5分钟波动{4}%' \
-            .format(str(datetime.now()).split('.')[0],code_,
+    sms1 = '【{0} · 波动预警 · {1}】\n全天波动：{2}%\n10分钟波动：{3}%\n5分钟波动{4}%' \
+            .format(
+                    code_,
+                    str(datetime.now()).split('.')[0],
                     str(c_today*100)[0:5],
-                    round(c_10min,4)*100,
-                    round(c_5min,4)*100,)
-    sms2 = '\n今日累计成交量：%s'%today_amount
-    sms = sms1+sms2  
+                    str(c_10min*100)[0:5],
+                    str(c_5min*100)[0:5],
+                    )
+    sms2 = '\n今日累计成交量：%s \n'%today_amount
+    sms = sms1 + sms2  
                   
     # 判断是否需要进行预警
     if c_today > mode['change_in_today']:
@@ -152,9 +155,14 @@ def m_big(ticks,mode_level='level_A'):
     bm_5min = len(ticks_5)
     
     # 构造预警消息
-    sms1 = '{0}\n{1}\n今日大单累计成交 {2},占比 {3}。\n最近几分钟，大单密集，请注意！' \
-            .format(str(datetime.now()).split('.')[0],code_,cumsum_big,big_rate)
-    sms2 = '\n今日累计成交量：%s'%str(today_amount)
+    sms1 = '【{0} · 大单预警 · {1}】\n今日大单累计成交 {2} 元,占比 {3}%。\n最近几分钟，大单密集，请注意！' \
+            .format(
+                    code_,
+                    str(datetime.now()).split('.')[0],
+                    cumsum_big,
+                    str(big_rate*100)[0:5],
+                    )
+    sms2 = '\n今日累计成交量：%s \n'%str(today_amount)
     sms = sms1 + sms2
     
     # 判断是否需要进行预警
