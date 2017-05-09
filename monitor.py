@@ -6,143 +6,170 @@ Created on Tue Apr 11 21:21:27 2017
 """
 
 import tushare as ts
-from datetime import datetime,date,time,timedelta
-import time as t
+from datetime import datetime,timedelta
+
+# 从conf.py中导入相关参数
+import conf
+bot = conf.bot
+contacts = conf.contacts
+
+
+def notifier(bot,contacts,sms):
+    '''使用QQ发送预警消息'''
+    for contact in contacts:
+        con = bot.List('buddy',contact)
+        bot.SendTo(con[0],sms)
+        
+
+def get_ticks(code):
+    '''获取今天的历史分笔数据,每次只能输入一只股票'''
+    assert type(code) == str, ('get_ticks(code): code为单只股票代码，且必须是str')
+    ticks = ts.get_today_ticks(code,retry_count=10)
+    ticks.time = ticks.time.apply(lambda x:datetime.strptime(x,'%H:%M:%S'))
+    ticks['code'] = code
+    ticks.sort_values(by='time',inplace=True)
+    return ticks
 
 
 
-class monitor:
+def m_change(ticks,mode_level='level_A'):
+    '''监控波动（5分钟、10分钟、累计）
+    
+    parameter
+    --------------------------------------
+    ticks  今日的历史分笔数据  pd.DataFrame
+    mode_level 监控模式，详见conf.py
+    
+    example
+    --------------------------------------
+    import monitor as m
+        
+    code = '600122'
+    ticks = m.get_ticks(code)
+    m.m_change(ticks,mode_level='level_C')
+    
     '''
-    盘中监控器
+    # 获取开盘价、当日累计成交、换手
+    code_ = ticks.code.unique()[0]
+    assert type(code_) == str, ('code_为单只股票代码，且必须是str')
+    data = ts.get_realtime_quotes(code_)
+    op = float(data.loc[0,'open'])
+    today_amount  = data.loc[0,'amount'].split('.')[0]
     
-    监控器初始化参数：
-        股票代码  code  
-        大单定义  over  默认值 100000
-        开始时间  time_s
-        结束时间  time_e
+    # 计算今日累计波动
+    max_today = ticks.price.max()
+    min_today = ticks.price.min()
+    c_today = (max_today - min_today)/op
+    
+    # 计算10分钟波动
+    t0 = ticks.iloc[-1].time
+    delta_10 = timedelta(minutes=10)
+    t10 = t0 - delta_10
+    ticks_10 = ticks[ticks.time > t10 ]
+    max_in_10min = ticks_10.price.max()
+    min_in_10min = ticks_10.price.min()
+    c_10min = (max_in_10min - min_in_10min)/op
+    
+    # 计算5分钟波动
+    delta_5 = timedelta(minutes=5)
+    t5 = t0 - delta_5
+    ticks_5 = ticks[ticks.time > t5 ]
+    max_in_5min = ticks_5.price.max()
+    min_in_5min = ticks_5.price.min()
+    c_5min = (max_in_5min - min_in_5min)/op
+    
+    # 从conf获得监控参数
+    mode = conf.modes[mode_level]
+    
+    # 构造预警消息
+    sms1 = '{0}\n{1}\n全天波动：{2}%\n10分钟波动：{3}%\n5分钟波动{4}%' \
+            .format(str(datetime.now()).split('.')[0],code_,
+                    str(c_today*100)[0:5],
+                    round(c_10min,4)*100,
+                    round(c_5min,4)*100,)
+    sms2 = '\n今日累计成交量：%s'%today_amount
+    sms = sms1+sms2  
+                  
+    # 判断是否需要进行预警
+    if c_today > mode['change_in_today']:
+        send_sms = True
+    elif c_5min > mode['change_in_5min']:
+        send_sms = True
+    elif c_10min > mode['change_in_10min']:
+        send_sms = True
+    elif datetime.now().minute%mode['inform_interval'] == 0:
+        send_sms = True
+    else:
+        send_sms = False
+    
+    while send_sms:
+        # 调用notifier发送预警消息
+        notifier(bot,contacts,sms)
+        send_sms = False
+
+
         
+def m_big(ticks,mode_level='level_A'):
+    '''监控大单
+    
+    parameter
+    -----------------------------------------
+    ticks  今日的历史分笔数据  pd.DataFrame
+    mode_level 监控模式，详见conf.py
+    -----------------------------------------
+    import monitor as m
+        
+    code = '600122'
+    ticks = m.get_ticks(code)
+    m.m_change(ticks,mode_level='level_C')    
+    
     '''
-    def __init__(self,code,over=100000):
-        self.version = 'test'
-        self.author = 'zb'
-        self.date = datetime.today().date()
-        self.code = code
-        # over是对大单的定义，即成交总额超过over的会被认为是大单
-        self.over = over
-        self.open_p = float(ts.get_realtime_quotes(code).iloc[0,1])
-        
-        # 登录QQ机器人
-        from qqbot import QQBot
-        self.bot = QQBot()
-        self.bot.Login()  # 用需要登录的qq扫码
-        self.con = self.bot.List('buddy','年轻人')  # 获取好友列表
-        sms = 'QQ机器人登录成功！'
-        self.bot.SendTo(self.con[0],sms)        
+    # 从conf获得监控参数
+    mode = conf.modes[mode_level]
     
-    def sms_contruct(code,ticks,over=100000):
-        '''
-        构造通知消息
-        
-        parameters
-        ----------
-            code    股票代码
-            ticks   股票当日历史分笔，dataframe
-        '''
-        # 时间
-        dt = datetime.now().isoformat(' ').split('.')[0]
-        # 当前价 & 当前量
-        rt = ts.get_realtime_quotes(code)
-        price = rt.iloc[0,3]
-        total = float(rt.iloc[0,9])
-        # 10万以上买卖盘分布及其占比
-        datas = ticks[ticks.amount > over]
-        bs = dict(datas.groupby(['type']).apply(sum)['amount'])
-        ratio = sum(bs.values())/total
-        # 构造sms
-        sms_1 = '{0}\n{1}：当前价 {2},当前总成交 {3}\n'.format(dt,code,price,total)
-        sms_2 = '{0}万以上成交量占比 {1}；其中，买盘 {2}，卖盘{3}'.format(str(over)[0:2],
-                round(ratio,3),bs['买盘'],bs['卖盘'])
-        return sms_1 + sms_2
-        
+    # 获取开盘价、当日累计成交、换手
+    code_ = ticks.code.unique()[0]
+    assert type(code_) == str, ('code_为单只股票代码，且必须是str')
+    data = ts.get_realtime_quotes(code_)
+    today_amount  = float(data.loc[0,'amount'].split('.')[0])
     
-    def check_undulation_and_num_big(self,time_span=5,change=0.01,num_big=10):
-        '''
-        检测5分钟波动1%以上；检测5分钟大单数量。
-        
-        '''
-        code = self.code
-        over = self.over
-        
-        delta = timedelta(minutes=time_span)
-        open_p = self.open_p       
-        
-        print('正在监控：%s'%code)
-        while time(9,30,0) <= datetime.now().time() <= time(11,30,0) or \
-              time(13,0,0) <= datetime.now().time() <= time(15,0,0) :
-            
-            # 调用ts.get_today_ticks获取当日历史分笔
-            ticks = ts.get_today_ticks(code,retry_count=10)
-            print('\n')
-            ticks['time'] = [datetime.strptime(ticks.iloc[i,0],'%H:%M:%S') \
-                                for i in range(len(ticks))]
-            # 选择从当前时间开始五分钟内的数据
-            dt = datetime.combine(date(1900,1,1),datetime.now().time())
-            s_dt = dt - delta
-            datas = ticks[ticks.time > s_dt]
-            
-            # 计算5分钟波动 
-            datas['price'] = [float(i) for i in datas['price']]
-            p_wave = (max(datas.price) - min(datas.price))/open_p
-            p_wave = round(p_wave,3)
-            if p_wave > change:
-                msg = '5分钟波动大于 %s 个点，请注意！\n'%str(p_wave*100)
-                sms = monitor.sms_contruct(code,ticks,over)
-                self.bot.SendTo(self.con[0],msg+sms)
-                t.sleep(120)
-            
-            # 检测5分钟大单数量
-            big_orders = datas[datas.amount > over]
-            if len(big_orders) > num_big:
-                msg = '5分钟大单成交数量累计大于 %s 单，请注意！\n'%str(num_big)
-                sms = monitor.sms_contruct(code,ticks,over)
-                self.bot.SendTo(self.con[0],msg+sms)
-                t.sleep(120)
-            
-            t.sleep(30)
-        print('监控结束：%s'%code)
+    # 计算今日累计大单
+    big_ticks = ticks[ticks.amount > mode['over'][0]]
+    cumsum_big = sum(big_ticks.amount)
+    big_rate = cumsum_big/today_amount   # 今日大单成交占比
     
-    def check_big_order(self,over=100000,to_csv=True):
-        '''
-        保存某只股票的当日交易明细
-        parameters
-        ----------------
-            code  股票代码 如：600122
-            over  成交金额在over数值以上
-            to_csv  布尔变量，True表示将结果保存到csv文件中
-        return
-        ----------------
-            datas  当日成交额在over数值以上的所有成交记录
-        '''
-        code = self.code
-        
-        # 调用ts.get_today_ticks获取当日交易记录
-        ticks = ts.get_today_ticks(code)
-        print('\n')
-        # 获取当日成交额
-        amount = float(ts.get_realtime_quotes(code).iloc[0,9])
-        datas = ticks[ticks.amount > over]
-        bs = dict(datas.groupby(['type']).apply(sum)['amount'])
-        print(bs)
-        ratio = sum(bs.values())/amount
-        print('{0}万以上成交量占比：{1}'.format(str(over)[0:2],round(ratio,3)))
-        
-        # 保存结果
-        if to_csv == True:
-            res_csv = code + '_over_' + str(over)[0:2] + 'w_'+\
-                        date.today().isoformat()+'.csv'
-            datas.to_csv(res_csv, index=False)
-        return datas
-        
-        
-        
+    # 计算10分钟大单数量
+    t0 = ticks.iloc[-1].time
+    delta_10 = timedelta(minutes=10)
+    t10 = t0 - delta_10
+    ticks_10 = big_ticks[big_ticks.time > t10 ]
+    bm_10min = len(ticks_10)
+    
+    # 计算5分钟大单数量
+    delta_5 = timedelta(minutes=5)
+    t5 = t0 - delta_5
+    ticks_5 = big_ticks[big_ticks.time > t5 ]
+    bm_5min = len(ticks_5)
+    
+    # 构造预警消息
+    sms1 = '{0}\n{1}\n今日大单累计成交 {2},占比 {3}。\n最近几分钟，大单密集，请注意！' \
+            .format(str(datetime.now()).split('.')[0],code_,cumsum_big,big_rate)
+    sms2 = '\n今日累计成交量：%s'%str(today_amount)
+    sms = sms1 + sms2
+    
+    # 判断是否需要进行预警
+    if bm_10min > mode['big_in_10min']:
+        send_sms = True
+    elif bm_5min > mode['big_in_5min']:
+        send_sms = True
+    elif datetime.now().minute%mode['inform_interval'] == 0:
+        send_sms = True
+    else:
+        send_sms = False
+    
+    while send_sms:
+        # 调用notifier发送预警消息
+        notifier(bot,contacts,sms)
+        send_sms = False    
+    
     
