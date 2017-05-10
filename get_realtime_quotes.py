@@ -30,8 +30,8 @@ def get_realtime_quotes():
 
 # 定时任务
 scheduler = BlockingScheduler()
-scheduler.add_job(get_realtime_quotes,'cron',minute='0,30',hour='9,13',
-                  next_run_time = datetime(2017,5,9,13,52,0))
+scheduler.add_job(get_realtime_quotes,'cron',minute='0,30',hour='9,13',)
+                  #next_run_time = datetime(2017,5,9,13,52,0))
 try:
     scheduler.start()
 except:

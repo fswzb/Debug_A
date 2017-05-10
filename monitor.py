@@ -105,11 +105,13 @@ def m_change(ticks,mode_level='level_A'):
     else:
         send_sms = False
     
+    sms_sended = False
     while send_sms:
         # 调用notifier发送预警消息
         notifier(bot,contacts,sms)
         send_sms = False
-
+        sms_sended = True
+    return sms_sended  # 发送消息之后，返回sms_sended为true
 
         
 def m_big(ticks,mode_level='level_A'):
@@ -155,7 +157,7 @@ def m_big(ticks,mode_level='level_A'):
     bm_5min = len(ticks_5)
     
     # 构造预警消息
-    sms1 = '【{0} · 大单预警 · {1}】\n今日大单累计成交 {2} 元,占比 {3}%。\n最近几分钟，大单密集，请注意！' \
+    sms1 = '【{0} · 大单预警 · {1}】\n今日大单累计成交 {2} 元，占比 {3}%。\n最近几分钟，大单密集，请注意！' \
             .format(
                     code_,
                     str(datetime.now()).split('.')[0],
@@ -175,9 +177,11 @@ def m_big(ticks,mode_level='level_A'):
     else:
         send_sms = False
     
+    sms_sended = False
     while send_sms:
         # 调用notifier发送预警消息
         notifier(bot,contacts,sms)
-        send_sms = False    
-    
+        send_sms = False
+        sms_sended = True
+    return sms_sended  # 发送消息之后，返回sms_sended为true
     

@@ -32,13 +32,13 @@ modes = {'level_A':{
                     },
          'level_C':{  # 最低等级，开发阶段用于测试(任何时候都会触发预警)
                     # 波动监控参数
-                    'change_in_today':0.003,       # 日波动5%
-                    'change_in_10min':0.001,       # 10分钟波动3%
-                    'change_in_5min':0.001,        # 5分钟波动1%
+                    'change_in_today':0.03,       # 日波动5%
+                    'change_in_10min':0.02,       # 10分钟波动3%
+                    'change_in_5min':0.01,        # 5分钟波动1%
                     # 大单监控参数
                     'over':[100000,200000,500000,1000000,5000000],
-                    'big_in_5min':0,
-                    'big_in_10min':1,
+                    'big_in_5min':5,
+                    'big_in_10min':10,
                     # 其他监控参数
                     'inform_interval':10       # 固定通知的时间间隔（分钟）
                     }
