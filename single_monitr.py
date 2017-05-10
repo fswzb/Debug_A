@@ -10,8 +10,6 @@ from time import sleep
 import monitor as m
 from conf import modes
 
-mode = modes['level_A']
-
 def single_monitor(code):
     '''监控单只股票的大单和波动'''
     
@@ -22,18 +20,12 @@ def single_monitor(code):
         sms_sended1 = m.m_change(ticks,mode_level='level_A')
         sms_sended2 = m.m_big(ticks,mode_level='level_A')
         sleep(3)
-        # 一条预警消息发送之后，程序休眠 180秒
+        # 一条预警消息发送之后，程序休眠 120秒
         while sms_sended1 or sms_sended2:
             sleep(120)
             sms_sended1 = False
             sms_sended2 = False
         
-
-# 需要监控的股票列表 必须为list
-codes = ['600122']
-code = codes[0]
-single_monitor(code)
-
-
-
-
+if __name__ == '__main__':
+	code = '600122'
+	single_monitor(code)
