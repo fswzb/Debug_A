@@ -24,12 +24,11 @@ def notifier(bot,contacts,sms):
 def get_ticks(code):
     '''获取今天的历史分笔数据,每次只能输入一只股票'''
     assert type(code) == str, ('get_ticks(code): code为单只股票代码，且必须是str')
-    ticks = ts.get_today_ticks(code,retry_count=10)
+    ticks = ts.get_today_ticks(code,retry_count=18)
     ticks.time = ticks.time.apply(lambda x:datetime.strptime(x,'%H:%M:%S'))
     ticks['code'] = code
     ticks.sort_values(by='time',inplace=True)
     return ticks
-
 
 
 def m_change(ticks,mode_level='level_A'):
@@ -100,6 +99,7 @@ def m_change(ticks,mode_level='level_A'):
         send_sms = True
     elif c_10min > mode['change_in_10min']:
         send_sms = True
+    # 固定时间间隔为 inform_interval 发送预警
     elif datetime.now().minute%mode['inform_interval'] == 0:
         send_sms = True
     else:
@@ -121,6 +121,8 @@ def m_big(ticks,mode_level='level_A'):
     -----------------------------------------
     ticks  今日的历史分笔数据  pd.DataFrame
     mode_level 监控模式，详见conf.py
+
+    example
     -----------------------------------------
     import monitor as m
         
@@ -172,6 +174,7 @@ def m_big(ticks,mode_level='level_A'):
         send_sms = True
     elif bm_5min > mode['big_in_5min']:
         send_sms = True
+    # 固定时间间隔为 inform_interval 发送预警
     elif datetime.now().minute%mode['inform_interval'] == 0:
         send_sms = True
     else:
