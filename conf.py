@@ -59,6 +59,6 @@ def QQ_login():
     return bot
     
 bot = QQ_login()
-contacts = ['年轻人','great']
+contacts = ['年轻人']
 
 
