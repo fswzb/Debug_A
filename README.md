@@ -23,6 +23,7 @@ A股变化莫测，光靠一双眼睛、四台显示器盯盘难免会有疏漏�
 
 ## 单只股票监控
 以下是实现单只股票监控的代码：
+	
 	from datetime import datetime,time
 	from time import sleep
 	import monitor as m
