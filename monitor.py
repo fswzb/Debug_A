@@ -20,16 +20,6 @@ def notifier(bot,contacts,sms):
         con = bot.List('buddy',contact)
         bot.SendTo(con[0],sms)
         
-
-def get_ticks(code):
-    '''获取今天的历史分笔数据,每次只能输入一只股票'''
-    assert type(code) == str, ('get_ticks(code): code为单只股票代码，且必须是str')
-    ticks = ts.get_today_ticks(code,retry_count=18)
-    ticks.time = ticks.time.apply(lambda x:datetime.strptime(x,'%H:%M:%S'))
-    ticks['code'] = code
-    ticks.sort_values(by='time',inplace=True)
-    return ticks
-
 def m_price(code,high,low):
     '''监控股价'''
     assert type(code) == str,('code必须是单只股票代码，类型为str')
@@ -51,6 +41,51 @@ def m_price(code,high,low):
                 .format(code,name_,cp,low,)
         # 调用notifier发送消息
         notifier(bot,contacts,sms)
+
+
+def get_ticks(code):
+    '''获取今天的历史分笔数据,每次只能输入一只股票'''
+    assert type(code) == str, ('get_ticks(code): code为单只股票代码，且必须是str')
+    ticks = ts.get_today_ticks(code,retry_count=18)
+    ticks.time = ticks.time.apply(lambda x:datetime.strptime(x,'%H:%M:%S'))
+    ticks['code'] = code
+    ticks.sort_values(by='time',inplace=True)
+    return ticks
+
+def basic_sms(ticks):
+    '''构造基本消息（当前价，开盘价，今日累计成交，10万以上成交占比）'''
+    code_ = ticks.code.unique()[0]
+    assert type(code_) == str, ('code_为单只股票代码，且必须是str')
+    cur = ts.get_realtime_quotes(code_)
+    name_ = cur.loc[0,'name']
+    cp = float(cur.loc[0,'price']) # 当前价
+    op = float(cur.loc[0,'open'])  # 开盘价
+    today_amount  = cur.loc[0,'amount'].split('.')[0]  #今日累计成交
+    # 10万以上成交占比
+    ticks_10w = ticks[ticks.amount > 100000]
+    amount_10w = sum(ticks_10w.amount)
+    ratio_10w = amount_10w/float(today_amount)
+    # 构造基本消息
+    b_sms = '''{0}({1})当前价 {2}元，开盘价 {3}元，
+    今日累计成交 {4}元，其中10万以上成交占比 {5}%\n''' \
+    .format(code_,name_,cp,op,today_amount,str(ratio_10w*100)[0:5])
+    return b_sms
+
+def fixed_interval_inform(ticks,interval=10):
+    '''固定时间间隔发送消息
+    
+    parameters
+    -------------------
+    ticks       get_tics的返回对象
+    interval    固定时间间隔（单位：分钟）    
+    '''
+    if datetime.now().minute%interval == 0:
+        # 调用basic_sms生成基本通知消息
+        b_sms = basic_sms(ticks)
+        sms = '【固定间隔通知】' + b_sms
+        # 调用notifier发送消息
+        notifier(bot,contacts,sms)
+    
     
         
 def m_change(ticks,mode_level='level_A'):
@@ -121,17 +156,13 @@ def m_change(ticks,mode_level='level_A'):
         send_sms = True
     elif c_10min > mode['change_in_10min']:
         send_sms = True
-    # 固定时间间隔为 inform_interval 发送预警
-    elif datetime.now().minute%mode['inform_interval'] == 0:
-        send_sms = True
     else:
         send_sms = False
-    
+
     sms_sended = False
-    while send_sms:
+    if send_sms:
         # 调用notifier发送预警消息
         notifier(bot,contacts,sms)
-        send_sms = False
         sms_sended = True
     return sms_sended  # 发送消息之后，返回sms_sended为true
 
@@ -196,17 +227,13 @@ def m_big(ticks,mode_level='level_A'):
         send_sms = True
     elif bm_5min > mode['big_in_5min']:
         send_sms = True
-    # 固定时间间隔为 inform_interval 发送预警
-    elif datetime.now().minute%mode['inform_interval'] == 0:
-        send_sms = True
     else:
         send_sms = False
     
     sms_sended = False
-    while send_sms:
+    if send_sms:
         # 调用notifier发送预警消息
         notifier(bot,contacts,sms)
-        send_sms = False
         sms_sended = True
     return sms_sended  # 发送消息之后，返回sms_sended为true
     
