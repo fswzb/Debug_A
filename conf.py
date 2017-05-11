@@ -59,6 +59,6 @@ def QQ_login():
     return bot
     
 bot = QQ_login()
-contacts = ['年轻人']
+contacts = ['年轻人']  # 使用QQ发送消息，同时向多个联系人发送消息会被封号。
 
 
