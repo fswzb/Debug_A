@@ -30,7 +30,29 @@ def get_ticks(code):
     ticks.sort_values(by='time',inplace=True)
     return ticks
 
-
+def m_price(code,high,low):
+    '''监控股价'''
+    assert type(code) == str,('code必须是单只股票代码，类型为str')
+    assert high > low,('设定的最高价（high）必须大于最低价（low）！')
+    cur = ts.get_realtime_quotes(code)
+    name_ = cur.loc[0,'name']
+    # 获取当前价格
+    cp = float(cur.loc[0,'price'])
+    assert type(high) == float,('high必须是float类型')
+    if cp > high:
+        # 构造预警消息
+        sms = '{0}({1})当前价 {2}元，上穿设定的最高价 {3}元，请注意！' \
+                .format(code,name_,cp,high,)
+        # 调用notifier发送消息
+        notifier(bot,contacts,sms)
+    elif cp < low:
+        # 构造预警消息
+        sms = '{0}({1})当前价 {2}元，下穿设定的最低价 {3}元，请注意！' \
+                .format(code,name_,cp,low,)
+        # 调用notifier发送消息
+        notifier(bot,contacts,sms)
+    
+        
 def m_change(ticks,mode_level='level_A'):
     '''监控波动（5分钟、10分钟、累计）
     
