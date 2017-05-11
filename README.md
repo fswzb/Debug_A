@@ -33,20 +33,35 @@ A股变化莫测，光靠一双眼睛、四台显示器盯盘难免会有疏漏�
 	    print('时间：%s   正在监控 %s'%(str(datetime.now()).split('.')[0],code))
 	    while time(9,30,0) <= datetime.now().time() <= time(11,30,0) or \
 	        time(13,0,0) <= datetime.now().time() <= time(15,0,0) :
-	        ticks = m.get_ticks(codes[0])
+	        # 股价监控
+	        m.m_price(code,high=10.8,low=10.6)
+	        ticks = m.get_ticks(code)
+	        # 固定间隔通知
+	        m.fixed_interval_inform(ticks,interval=10)
+	        # 监控波动和大单
 	        sms_sended1 = m.m_change(ticks,mode_level='level_A')
 	        sms_sended2 = m.m_big(ticks,mode_level='level_A')
 	        sleep(3)
 	        # 一条预警消息发送之后，程序休眠 120秒
-	        while sms_sended1 or sms_sended2:
+	        if sms_sended1 or sms_sended2:
 	            sleep(120)
-	            sms_sended1 = False
-	            sms_sended2 = False
 	        
 	if __name__ == '__main__':
 		code = '600122'
 		single_monitor(code)
 
 
+## 多只股票监控
+使用多个线程，每个线程监控一只股票。以下是多只股票监控的代码：
 
+	import threading
+	from single_monitor import single_monitor
 
+	# 使用多个线程，每个线程监控一只股票
+	m1 = threading.Thread(target=single_monitor,args=('600122',),name='htgk')
+	m2 = threading.Thread(target=single_monitor,args=('002256',),name='zxgf')
+
+	m1.start()
+	m2.start()
+	m1.join()
+	m2.join()
