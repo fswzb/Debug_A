@@ -5,6 +5,11 @@ Created on Mon Apr 17 12:34:34 2017
 @author: Mike
 """
 
+'''
+-------------------------------------------------------------------------------
+监控条件配置模块
+-------------------------------------------------------------------------------
+'''
 # 监控模式  level_A  强  level_B 一般  level_C 弱
 modes = {'level_A':{
                     # 波动监控参数
@@ -44,14 +49,21 @@ def QQ_login(qq = None,user = None):
     '''
     登录QQ机器人用于发送消息
     
-    调用该函数之后会弹出一个二维码，使用用于发送消息的QQ扫码登录即可
-    name 为 用于接收监控消息的qq备注名，即已登录QQ中的任一个好友
+    parameters
+    -------------
+    qq      需要登录的QQ号
+    user    需要登录的QQ用户名
+    注：qq和user传入一个参数就可以
+    
+    example
+    -------------
+    bot = QQ_login(qq='1145343044')
+    
     '''
     from qqbot import QQBot
     bot = QQBot()
     bot.Login(qq=qq,user=user)  # 用需要登录的qq扫码
     return bot
     
-bot = QQ_login()
+bot = QQ_login(user='Debug_A')
 contacts = ['年轻人']  # 使用QQ发送消息，同时向多个联系人发送消息会被封号。
-
