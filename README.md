@@ -18,7 +18,7 @@ A股变化莫测，光靠一双眼睛、四台显示器盯盘难免会有疏漏�
 
 - pandas
 - tushare
-- QQbot
+- [QQbot](https://github.com/pandolia/qqbot)
 - APScheduler
 
 ## 单只股票监控

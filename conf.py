@@ -40,7 +40,7 @@ modes = {'level_A':{
 
 
 # 登录QQ并指定接收监控消息的联系人
-def QQ_login():
+def QQ_login(qq = None,user = None):
     '''
     登录QQ机器人用于发送消息
     
@@ -49,10 +49,9 @@ def QQ_login():
     '''
     from qqbot import QQBot
     bot = QQBot()
-    bot.Login()  # 用需要登录的qq扫码
+    bot.Login(qq=qq,user=user)  # 用需要登录的qq扫码
     return bot
     
 bot = QQ_login()
 contacts = ['年轻人']  # 使用QQ发送消息，同时向多个联系人发送消息会被封号。
-
 
