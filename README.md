@@ -13,13 +13,14 @@ A股变化莫测，光靠一双眼睛、四台显示器盯盘难免会有疏漏�
 2. 大单成交实时监控
 3. 股价波动实时监控
 4. QQ消息实时发送
+5. 邮件预警消息发送
 
 ## 项目依赖
 
-- pandas
-- tushare
+- [pandas](http://pandas.pydata.org/)
+- [tushare](https://github.com/waditu/tushare)
 - [QQbot](https://github.com/pandolia/qqbot)
-- APScheduler
+- [APScheduler](http://apscheduler.readthedocs.io/en/latest/)
 
 ## 单只股票监控
 以下是实现单只股票监控的代码：
