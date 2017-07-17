@@ -1,0 +1,4 @@
+pandas == 0.20.1
+tushare == 0.8.2
+qqbot == 2.3.4
+APScheduler == 3.3.1
